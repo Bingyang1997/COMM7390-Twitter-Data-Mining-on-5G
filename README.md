@@ -49,26 +49,24 @@ Another method we calculate sentiments is to use ‘syuzhet’  package.We  can 
 
 ## Attached is the R codes:
 
-Step 0: Creating a Twitter developer account
-#Generating an access token and token secret: 
-> token <- create_token(app = ‘GroupAlphaCOMM7390’,
-consumer_key = ‘8sePurofUSiHl79xLQ3DOFBBS’,
-consumer_secret=
-‘QLOmeZ3MXIFW3LmnvOZt4157AtMT3xjGIRHpV4gnQhWZJSSXgi’,
-access_token =
-‘1190242219094986757-BmvDjEW5DFGz31DvBJNDphz3SW9E8m’,
-access_secret =
-‘XGfNhSJT7azkeEKqeKdEQhzpMqKgyMqbbbqKjNpuXv0wv’,
-set_renv = TRUE)
-Step 1: Preparation for Visualization 
+- Step 0: Creating a Twitter developer account
+
+- Step 1: Preparation for Visualization 
 #load rtweet package
+
 > if (!require(‘rtweet’)) install.packages(‘rtweet’) 
+
 > library(‘rtweet’) 
+
 > dataset <- search_tweets(‘#5G’, n = 10000, 
                include_rts = FALSE, lang = ‘en’) 
+
 > dataset 
+
 > data.frame(dataset)
+
 #Show all the columns of the data frame 
+
 > colnames(dataset) 
  [1] ‘user_id’                
  [2] ‘status_id’              
@@ -82,51 +80,86 @@ Step 1: Preparation for Visualization
 [89] ‘profile_background_url’ 
 [90] ‘profile_image_url’
 
-Step 2: Visualizing frequency of tweets over time 
+- Step 2: Visualizing frequency of tweets over time 
 #load ggplot2 package
+
 > install.packages(‘ggplot2’)
+
 > library(‘ggplot2’) 
+
 #Plot time series of tweets using ts_plot
 > ts_plot(dataset, ‘3 hours’) 
+
 + ggplot2::theme_minimal() 
+
 + ggplot2::theme(plot.title = ggplot2::element_text(face = ‘bold’)) 
+
 + ggplot2::labs( x = NULL, y = NULL, 
 title = ‘Frequency of #5G Twitter statuses from past 9 days’, 
 subtitle = ‘Twitter status (tweet) counts aggregated using three-hour intervals’, 
 caption = ‘\nSource: Data collected from Twitter's REST API via rtweet’ )
 
  
+- Step 3: Text mining and word cloud 
 
-Step 3: Text mining and word cloud 
 #load tm/ SnowballC/ wordcloud/ RColorBrewer packages
+
 > if (!require(‘tm’))install.packages(‘tm’) 
+
 > if (!require(‘SnowballC’)) install.packages(‘SnowballC’) 
+
 > if (!require(‘wordcloud’))install.packages(‘wordcloud’) 
+
 > if (!require(‘RColorBrewer’))install.packages(‘RColorBrewer’) 
-> library(‘tm’) 
+
+> library(‘tm’)
+
 > library(‘SnowballC’) 
+
 > library(‘wordcloud’) 
+
 > library(‘RColorBrewer’) 
+
 #Load the tweets data as a corpus
+
 > mt.v <- VectorSource(dataset$text) 
+
 > mt.c <- SimpleCorpus(mt.v) 
+
 #Inspect the content of the document 'mt.c'
+
 > inspect(mt.c) 
-> mt.c.p <- tm_map(mt.c, content_transformer(tolower)) 
+
+> mt.c.p <- tm_map(mt.c, content_transformer(tolower))
+
 #Preprocess the corpus
+
 > mt.c.p <- tm_map(mt.c.p, removeNumbers) 
+
 > mt.c.p <- tm_map(mt.c.p, removeWords, stopwords(‘english’)) 
+
 > mt.c.p <- tm_map(mt.c.p, removePunctuation)
+
 > mt.c.p <- tm_map(mt.c.p, stripWhitespace) 
+
 #Inspect the content of the document 'mt.c.p'
+
 > inspect(mt.c.p) 
+
 #Constructs a matrix
+
 > dtm <- TermDocumentMatrix(mt.c.p)
+
 > m <- as.matrix(dtm)
+
 > v <- sort(rowSums(m),decreasing=TRUE)
+
 > d <- data.frame(word = names(v),freq=v)
+
 #Show the former 20 items in the dataset
+
 > head(d, 20)
+
                                          word freq
 iot                                       iot 1650
 will                                     will 1641
@@ -148,9 +181,13 @@ future                                 future  461
 industry                             industry  445
 first                                   first  402
 business                             business  400 
+
 #Set the seed of R's random number generator 
+
 > set.seed(1234) 
+
 #Plot the wordcloud of the tweets 
+
 > wordcloud(words = d$word, 
 freq = d$freq, 
 min.freq = 1, 
@@ -161,23 +198,41 @@ colors=brewer.pal(8, ‘Dark2’))
  
 
 #Load the hashtags data as a corpus
+
 > ha.v1 <- VectorSource(dataset$hashtags) 
+
 > ha.c1 <- SimpleCorpus(ha.v1) 
+
 #Inspect the content of the document 'ha.c1'
+
 > inspect(ha.c1) 
+
 #Preprocess the hashtags data
+
 > ha.c.p1 <- tm_map(ha.c1, content_transformer(tolower)) 
+
 > ha.c.p1 <- tm_map(ha.c.p1, removeNumbers) 
+
 > ha.c.p1 <- tm_map(ha.c.p1, removePunctuation)
+
 > ha.c.p1 <- tm_map(ha.c.p1, stripWhitespace) 
+
 #Inspect the content of the document 'ha.c.p1' 
+
 > inspect(ha.c.p1) 
+
 #Constructs a matrix
+
 > dtm1 <- TermDocumentMatrix(ha.c.p1)
+
 > m1 <- as.matrix(dtm1)
+
 > v1 <- sort(rowSums(m1),decreasing=TRUE)
+
 > d1 <- data.frame(word = names(v1),freq=v1)
+
 #Show the 20 hashtags connected to '#5G'
+
 > head(d1, 20)
                                          word freq
 iot                                       iot 1261
@@ -202,87 +257,150 @@ huawei                                 huawei  189
 network                               network  171
 
 Step 4: calculating sentiments of tweets
+
 > install.packages('RSentiment')
+
 > install.packages('DT')
+
 > install.packages('syuzhet')
+
 #Load the tweets as a corpus
+
 > r1 = as.character(dataset$text)
 
 #Preprocess the hashtags data
 > set.seed(100)
+
 > sample = sample(r1, (length(r1)))
+
 > corpus = Corpus(VectorSource(list(sample)))
+
 > corpus = tm_map(corpus, removePunctuation)
+
 > corpus = tm_map(corpus, content_transformer(tolower))
+
 > corpus = tm_map(corpus, removeNumbers)
+
 > corpus = tm_map(corpus, stripWhitespace)
+
 > corpus = tm_map(corpus, 
 removeWords, stopwords('english'))
+
 > corpus = tm_map(corpus, stemDocument)
+
 > dtm_up = DocumentTermMatrix(VCorpus(
 VectorSource(corpus[[1]]$content)))
+
 > freq_up <- colSums(as.matrix(dtm_up))
+
 #Calculate sentiments of tweets
+
 > library(‘RSentiment’)
+
 > sentiments_up = calculate_sentiment(names(freq_up))
+
 > sentiments_up = cbind(sentiments_up, 
  as.data.frame(freq_up))
+ 
 > sent_pos_up = sentiments_up[
                    sentiments_up$sentiment == 'Positive',]
+                   
 > sent_neg_up = sentiments_up[
                    sentiments_up$sentiment == 'Negative',]
+                   
 > cat(‘We have far lower negative Sentiments: ‘,
 sum(sent_neg_up$freq_up),’ than positive: ‘,
 sum(sent_pos_up$freq_up))
+
 #Creat a datatable for 'positive'tweets
+
 > library(‘DT’)
+
 > DT::datatable(sent_pos_up)
  
 #Plot the wordcloud of the 'positive'tweets 
+
 >layout(matrix(c(1, 2), nrow=2), heights=c(1, 4))
+
 >par(mar=rep(0, 4))
+
 >plot.new()
+
 >set.seed(100)
+
 >wordcloud(sent_pos_up$text,sent_pos_up$freq,min.freq=10,colors=brewer.pal(6,’Dark2’))
  
 
 #Plot the datatable of the 'negative' tweets 
+
 > DT::datatable(sent_neg_up)
  
 > plot.new()
+
 > set.seed(100)
+
 > wordcloud(sent_neg_up$text,sent_neg_up$freq, 
 min.freq=10,colors=brewer.pal(6, ‘Dark2’))
+
  
 #Load the syuzhet packsge
+
 > text = as.character(rangoon$text) 
+
 #Remove reply
+
 > some_txt<-gsub(‘(RT|via)((?:\\b\\w*@\\w+)+)’,’’,text)
+
 #Remove links
+
 > some_txt<-gsub(‘http[^[:blank:]]+’,’’,some_txt)
+
 #Remove names
+
 > some_txt<-gsub(‘@\\w+’,’’,some_txt)
+
 #Remove punctuations
+
 > some_txt<-gsub(‘[[:punct:]]’,’ ‘,some_txt)
+
 #Remove numbers
+
 > some_txt<-gsub(‘[^[:alnum:]]’,’ ‘,some_txt)
+
 #Load the get_nrc_sentiment function
+
 > library(‘ggplot2’)
+
 > library(‘syuzhet’)
+
 > mysentiment<-get_nrc_sentiment((some_txt))
+
 #Calculate sentiments
+
 > mysentiment.positive =sum(mysentiment$positive)
+
 > mysentiment.anger =sum(mysentiment$anger)
+
 > mysentiment.anticipation =sum(mysentiment$anticipation)
+
 > mysentiment.disgust =sum(mysentiment$disgust)
+
 > mysentiment.fear =sum(mysentiment$fear)
+
 > mysentiment.joy =sum(mysentiment$joy)
+
 > mysentiment.sadness =sum(mysentiment$sadness)
+
 > mysentiment.surprise =sum(mysentiment$surprise)
+
 > mysentiment.trust =sum(mysentiment$trust)
+
 > mysentiment.negative =sum(mysentiment$negative)
+
 #Plot the barchart of the scores of sentiments using barplot function 
+
 > yAxis <- c(mysentiment.positive,
+
 + mysentiment.anger,
 + mysentiment.anticipation,
 + mysentiment.disgust,
@@ -292,13 +410,17 @@ min.freq=10,colors=brewer.pal(6, ‘Dark2’))
 + mysentiment.surprise,
 + mysentiment.trust,
 + mysentiment.negative)
+
 > xAxis <- c(‘Positive’,’Anger’,’Anticipation’,
  ‘Disgust’,’Fear’,’Joy’,’Sadness’,
  ‘Surprise’,’Trust’,’Negative’)
+ 
 > colors <- c(‘green’,’red’,’blue’,
 ‘orange’,’red’,’green’,’orange’,
 ‘blue’,’green’,’red’)
+
 > yRange <- range(0,yAxis) + 1000
+
 > barplot(yAxis, names.arg = xAxis,
  xlab = ‘Emotional valence’,ylab = ‘Score’,
  main = ‘Twitter sentiment for 5G’,
